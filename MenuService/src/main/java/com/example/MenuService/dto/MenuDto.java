@@ -12,6 +12,7 @@ public class MenuDto {
     private Long menuid;
     private String name;
     private String description;
+    private byte[] image;
     private double price;
     private String category;
     private boolean available;

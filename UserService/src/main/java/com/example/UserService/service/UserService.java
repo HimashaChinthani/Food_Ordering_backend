@@ -1,5 +1,6 @@
 package com.example.UserService.service;
 
+import com.example.UserService.dto.LoginRequest;
 import com.example.UserService.dto.UserDTO;
 import com.example.UserService.models.UserModel;
 import com.example.UserService.repo.UserRepository;
@@ -50,5 +51,12 @@ public class UserService {
         return modelMapper.map(userModel, UserDTO.class);
     }
 
+    public UserModel login(LoginRequest loginRequest) {
+
+        // Find user by email (Optional handling)
+        return userRepository.findByEmail(loginRequest.getEmail())
+                .filter(user -> user.getPassword().equals(loginRequest.getPassword()))
+                .orElse(null);
+    }
 
 }

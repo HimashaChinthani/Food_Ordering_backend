@@ -29,6 +29,9 @@ public class MenuModel {
 
     @Enumerated(EnumType.STRING)
     private Category category;
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] image;
 
     @Column(nullable = false)
     private boolean available = true;

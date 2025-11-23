@@ -1,8 +1,11 @@
 package com.example.UserService.controllers;
 
+import com.example.UserService.dto.LoginRequest;
 import com.example.UserService.dto.UserDTO;
+import com.example.UserService.models.UserModel;
 import com.example.UserService.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,5 +40,16 @@ public class UserController {
         return userService.getUserById(id);
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+
+        UserModel user = userService.login(loginRequest);
+
+        if (user == null) {
+            return ResponseEntity.status(401).body("Invalid email or password");
+        }
+
+        return ResponseEntity.ok(user);
+    }
 
 }
