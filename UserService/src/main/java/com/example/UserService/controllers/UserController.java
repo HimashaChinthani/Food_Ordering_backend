@@ -1,6 +1,5 @@
 package com.example.UserService.controllers;
 
-import com.example.UserService.dto.LoginRequest;
 import com.example.UserService.dto.UserDTO;
 import com.example.UserService.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +36,6 @@ public class UserController {
     public UserDTO getUserById(@PathVariable String id) {
         return userService.getUserById(id);
     }
-    @GetMapping("/login")
-    public UserDTO login(@RequestBody LoginRequest loginRequest) {
-        return userService.login(loginRequest.getEmail(), loginRequest.getPassword());
-    }
+
 
 }

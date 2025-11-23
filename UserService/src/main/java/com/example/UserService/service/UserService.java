@@ -49,15 +49,6 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return modelMapper.map(userModel, UserDTO.class);
     }
-    public UserDTO login(String email, String password) {
-        UserModel user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
-        if (!user.getPassword().equals(password)) { // In production, use hashing!
-            throw new RuntimeException("Invalid password");
-        }
-
-        return modelMapper.map(user, UserDTO.class);
-    }
 
 }
