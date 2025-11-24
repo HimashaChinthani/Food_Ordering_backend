@@ -34,7 +34,7 @@ public class MenuController {
         return menuService.deleteMenu(menuid);
     }
 
-    @GetMapping("/{menuid}")
+    @GetMapping("/getmenu/{menuid}")
     public MenuDto getMenuById(@PathVariable Long menuid) {
         return menuService.getMenuById(menuid);
     }
@@ -44,4 +44,5 @@ public class MenuController {
     public List<MenuDto> getMenusByCategory(@PathVariable Category category) {
         return menuService.getMenusByCategory(category);
     }
+
 }
