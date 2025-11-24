@@ -32,9 +32,13 @@ public class UserController {
         return userService.saveUser(userDTO);
     }
     @DeleteMapping("/deleteuser/{id}")
-    public String deleteUser(@PathVariable String id) {
-        return userService.deleteUser(id);
+    public ResponseEntity<String> deleteUser(@PathVariable String id) {
+        String result = userService.deleteUser(id);
+        return ResponseEntity.ok(result);
     }
+
+
+
     @GetMapping("/getuser/{id}")
     public UserDTO getUserById(@PathVariable String id) {
         return userService.getUserById(id);

@@ -39,12 +39,14 @@ public class UserService {
         return modelMapper.map(savedUser, UserDTO.class);
     }
     public String deleteUser(String id) {
+        id = id.trim();  // double-safe
         if (!userRepository.existsById(id)) {
             throw new RuntimeException("User not found with id: " + id);
         }
         userRepository.deleteById(id);
         return "User Deleted Successfully";
     }
+
     public UserDTO getUserById(String id) {
         UserModel userModel = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
