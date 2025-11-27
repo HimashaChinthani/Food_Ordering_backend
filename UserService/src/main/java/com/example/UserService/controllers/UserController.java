@@ -23,6 +23,7 @@ public class UserController {
         return userService.getAllUsers(); // call instance method
     }
 
+
     @PostMapping("/adduser")
     public UserDTO saveUser(@RequestBody UserDTO userDTO){
         return userService.saveUser(userDTO);
@@ -36,13 +37,13 @@ public class UserController {
         String result = userService.deleteUser(id);
         return ResponseEntity.ok(result);
     }
-
-
-
-    @GetMapping("/getuser/{id}")
-    public UserDTO getUserById(@PathVariable String id) {
-        return userService.getUserById(id);
+   @GetMapping("/getuser/{id}")
+    public ResponseEntity<String> getUser(@PathVariable String id) {
+        String result = String.valueOf(userService.getUser(id));
+        return ResponseEntity.ok(result);
     }
+
+
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {

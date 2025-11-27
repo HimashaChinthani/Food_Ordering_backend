@@ -7,8 +7,10 @@ import com.example.UserService.repo.UserRepository;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -46,12 +48,22 @@ public class UserService {
         userRepository.deleteById(id);
         return "User Deleted Successfully";
     }
+    public UserDTO getUser(String id) {
+        id = id.trim();  // double-safe
 
-    public UserDTO getUserById(String id) {
-        UserModel userModel = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("User not found with id: " + id);
+        }
+
+
+        UserModel userModel = userRepository.findById(id).get(); // safe because existsById returned true
+
         return modelMapper.map(userModel, UserDTO.class);
     }
+
+
+
 
     public UserModel login(LoginRequest loginRequest) {
 
@@ -60,5 +72,9 @@ public class UserService {
                 .filter(user -> user.getPassword().equals(loginRequest.getPassword()))
                 .orElse(null);
     }
+
+
+
+
 
 }

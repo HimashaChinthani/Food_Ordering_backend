@@ -1,6 +1,7 @@
 package com.example.OrderService.service;
 
 
+import com.example.OrderService.clients.UserClient;
 import com.example.OrderService.dto.OrderDto;
 import com.example.OrderService.models.OrderModel;
 import com.example.OrderService.repo.OrderRepository;
@@ -17,10 +18,22 @@ import java.util.List;
 public class OrderService {
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private UserClient userClient;
 
     @Autowired
     private ModelMapper modelMapper;
+    public OrderModel createOrder(OrderModel order) {
 
+        // NEW FUNCTIONALITY: validate user
+        try {
+            userClient.getUserById(order.getUserId());
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid userId — user not found!");
+        }
+
+        return orderRepository.save(order);
+    }
     public List<OrderDto> getAllOrders() {
         List<OrderModel> orders = orderRepository.findAll();
         return modelMapper.map(orders, new TypeToken<List<OrderDto>>() {}.getType());

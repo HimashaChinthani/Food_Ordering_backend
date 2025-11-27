@@ -26,4 +26,7 @@ public class OrderModel {
 
     // Optional: store a reference to menu items as JSON or another table
     private String items; // e.g., JSON string of ordered items
+
+    @Column(name = "user_id", nullable = true)
+    private String userId;
 }
