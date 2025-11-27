@@ -56,6 +56,10 @@ public class OrderService {
         orderRepository.deleteById(orderid);
         return "Order Deleted Successfully";
     }
+    public List<OrderDto> getOrdersByUserId(String userId) {
+        List<OrderModel> orders = orderRepository.findByUserId(userId);
+        return modelMapper.map(orders, new TypeToken<List<OrderDto>>() {}.getType());
+    }
 
 
 }
