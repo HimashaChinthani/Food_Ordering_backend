@@ -36,6 +36,11 @@ public class OrderController {
     public List<OrderDto> getOrdersByUserId(@PathVariable String userId) {
         return orderService.getOrdersByUserId(userId);
     }
+    @PutMapping("/updatestatus/{orderid}")
+    public OrderDto updateStatus(@PathVariable Long orderid) {
+        return orderService.updateStatus(orderid, "COMPLETED");
+    }
+
 
 
 }

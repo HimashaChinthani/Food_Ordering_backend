@@ -61,5 +61,26 @@ public class OrderService {
         return modelMapper.map(orders, new TypeToken<List<OrderDto>>() {}.getType());
     }
 
+    public OrderDto updateStatus(Long orderid, String newStatus) {
+
+        OrderModel order = orderRepository.findById(orderid)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        order.setStatus(newStatus);
+
+        OrderModel updated = orderRepository.save(order);
+
+        OrderDto dto = new OrderDto();
+        dto.setOrderId(updated.getOrderId());
+        dto.setUserId(updated.getUserId());
+        dto.setCustomerName(updated.getCustomerName());
+        dto.setCustomerEmail(updated.getCustomerEmail());
+        dto.setItems(updated.getItems());
+        dto.setTotalAmount(updated.getTotalAmount());
+        dto.setStatus(updated.getStatus());
+        dto.setOrderDate(updated.getOrderDate());
+
+        return dto;
+    }
 
 }

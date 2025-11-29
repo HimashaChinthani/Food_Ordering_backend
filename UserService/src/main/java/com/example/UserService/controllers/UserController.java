@@ -37,11 +37,12 @@ public class UserController {
         String result = userService.deleteUser(id);
         return ResponseEntity.ok(result);
     }
-   @GetMapping("/getuser/{id}")
-    public ResponseEntity<String> getUser(@PathVariable String id) {
-        String result = String.valueOf(userService.getUser(id));
-        return ResponseEntity.ok(result);
+    @GetMapping("/getuser/{id}")
+    public ResponseEntity<UserDTO> getUser(@PathVariable String id) {
+        UserDTO user = userService.getUser(id);
+        return ResponseEntity.ok(user); // returns JSON automatically
     }
+
 
 
 
