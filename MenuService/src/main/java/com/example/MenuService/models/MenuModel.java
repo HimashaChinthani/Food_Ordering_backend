@@ -27,6 +27,9 @@ public class MenuModel {
     @Column(nullable = false)
     private double price;
 
+    @Column(nullable = false)
+    private int quantity;
+
     @Enumerated(EnumType.STRING)
     private Category category;
     @Lob

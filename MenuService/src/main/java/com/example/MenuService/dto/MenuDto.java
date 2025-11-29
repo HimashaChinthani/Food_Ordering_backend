@@ -14,6 +14,7 @@ public class MenuDto {
     private String description;
     private byte[] image;
     private double price;
+    private int quantity;
     private String category;
     private boolean available;
 }
