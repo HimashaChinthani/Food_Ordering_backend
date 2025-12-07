@@ -9,7 +9,7 @@ import java.util.List;
 @Repository
 public interface ReviewsRepository extends JpaRepository<ReviewsModel, Long> {
 
-    // CORRECT — use menuid (NOT menuId)
+    // Find all reviews by Menu's id (assumes ReviewsModel has a 'menu' field mapped to Menu entity)
     List<ReviewsModel> findByMenu_Menuid(Long menuid);
 
 }

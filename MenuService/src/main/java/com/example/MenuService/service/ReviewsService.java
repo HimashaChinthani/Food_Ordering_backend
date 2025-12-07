@@ -45,5 +45,20 @@ public class ReviewsService {
         // Fetch reviews by matching menu -> menuid
         return reviewsRepository.findByMenu_Menuid(menuid);
     }
+    public ReviewsModel updateReview(ReviewsDTO reviewsDTO) {
+        Long id = reviewsDTO.getReviewId();
+        if (id == null) {
+            throw new IllegalArgumentException("Review ID must not be null");
+        }
+
+        ReviewsModel existingReview = reviewsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Review not found"));
+
+        existingReview.setRating(reviewsDTO.getRating());
+        existingReview.setComment(reviewsDTO.getComment());
+
+        return reviewsRepository.save(existingReview);
+    }
+
 
 }

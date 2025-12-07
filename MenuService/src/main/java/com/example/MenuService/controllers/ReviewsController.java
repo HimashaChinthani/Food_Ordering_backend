@@ -27,4 +27,25 @@ public class ReviewsController {
     }
 
 
+
+
+
+
+    @PutMapping("/updatereview/{reviewId}")
+    public ReviewsModel updateReview(
+            @PathVariable("reviewId") Long reviewId,
+            @RequestBody ReviewsDTO reviewsDTO) {
+
+        // Defensive check: make sure path variable is not null
+        if (reviewId == null) {
+            throw new IllegalArgumentException("Review ID in path must not be null");
+        }
+
+        // Set ID in DTO
+        reviewsDTO.setReviewId(reviewId);
+
+        // Call service
+        return reviewsService.updateReview(reviewsDTO);
+    }
+
 }

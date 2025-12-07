@@ -14,6 +14,11 @@ public class ReviewsDTO {
     private String comment;
     private Long menuId;   // just the ID of the menu
     private String userId; // user ID from User service
-
+    public void setReviewId(Long reviewId) {
+        this.reviewId = reviewId;
+    }
+    public Long getReviewId() {
+        return this.reviewId;
+    }
 
 }
