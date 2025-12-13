@@ -59,6 +59,12 @@ public class ReviewsService {
 
         return reviewsRepository.save(existingReview);
     }
-
+    public String deleteReview(Long reviewId) {
+        if (!reviewsRepository.existsById(reviewId)) {
+            throw new RuntimeException("review not found with id: " + reviewId);
+        }
+        reviewsRepository.deleteById(reviewId);
+        return "Review Deleted Successfully";
+    }
 
 }
