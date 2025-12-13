@@ -22,6 +22,7 @@ public class DriverModel {
     private String vehicleNumber;
     private String vehicleType;
     private String status;
-    private Date createdAt;
-    private Date updatedAt;
+
+    private Date createdAt = new Date();
+    private Date updatedAt = new Date();
 }
