@@ -83,4 +83,21 @@ public class OrderService {
         return dto;
     }
 
+    public OrderDto getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .map(order -> {
+                    OrderDto dto = new OrderDto();
+                    dto.setOrderId(order.getOrderId());
+                    dto.setUserId(order.getUserId());
+                    dto.setCustomerName(order.getCustomerName());
+                    dto.setCustomerEmail(order.getCustomerEmail());
+                    dto.setItems(order.getItems());
+                    dto.setTotalAmount(order.getTotalAmount());
+                    dto.setStatus(order.getStatus());
+                    dto.setOrderDate(order.getOrderDate());
+                    // deliveryAddress and driverId are not stored on OrderModel currently — leave null
+                    return dto;
+                })
+                .orElse(null);
+    }
 }

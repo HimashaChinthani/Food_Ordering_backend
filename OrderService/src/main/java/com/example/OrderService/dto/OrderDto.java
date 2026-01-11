@@ -13,4 +13,7 @@ public class OrderDto {
     private Double totalAmount;
     private String items;          // JSON or comma-separated items
     private LocalDateTime orderDate;
+
+    public void setDriverId(String driverId) {
+    }
 }
