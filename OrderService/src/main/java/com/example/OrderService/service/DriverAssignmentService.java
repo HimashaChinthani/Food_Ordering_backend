@@ -75,7 +75,7 @@ public class DriverAssignmentService {
         driverAssignmentRepository.deleteByOrder_OrderId(orderId);
 
         orderRepository.findById(orderId).ifPresent(order -> {
-            order.setStatus("PENDING");
+            order.setStatus("COMPLETED");
             orderRepository.save(order);
         });
     }
