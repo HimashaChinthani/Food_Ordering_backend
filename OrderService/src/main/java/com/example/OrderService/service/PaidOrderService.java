@@ -33,13 +33,33 @@ public class PaidOrderService {
 
     @Autowired
     private ModelMapper modelMapper;
-
-    // -------------------- GET ALL --------------------
     public List<PayDTO> getAllOrders() {
+
         List<PayOrderModel> orders = paidOrderRepository.findAll();
-        Type listType = new TypeToken<List<PayDTO>>() {}.getType();
-        return modelMapper.map(orders, listType);
+
+        return orders.stream().map(o -> {
+
+            PayDTO dto = new PayDTO();
+
+            dto.setPaymentId(o.getPaymentId());
+            dto.setUserId(o.getUserId());
+            dto.setStatus(o.getStatus());
+            dto.setTotalAmount(o.getTotalAmount());
+            dto.setItems(o.getItems());
+            dto.setOrderDate(o.getOrderDate());
+
+            // Explicit FK mapping (IMPORTANT)
+            if (o.getOrder() != null) {
+                dto.setOrderId(o.getOrder().getOrderId());
+                dto.setCustomerName(o.getOrder().getCustomerName());
+                dto.setCustomerEmail(o.getOrder().getCustomerEmail());
+            }
+
+            return dto;
+
+        }).toList();
     }
+
 
     // -------------------- ADD ORDER --------------------
     public PayDTO saveOrder(PayDTO payDTO) {
