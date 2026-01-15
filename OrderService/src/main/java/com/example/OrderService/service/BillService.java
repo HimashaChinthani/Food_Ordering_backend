@@ -2,23 +2,40 @@ package com.example.OrderService.service;
 
 import com.example.OrderService.dto.OrderDto;
 import org.springframework.stereotype.Service;
-
 @Service
 public class BillService {
 
     public String generateCustomerBill(OrderDto order) {
-        return "===== CUSTOMER BILL =====\n" +
-                "Order ID: " + order.getOrderId()+ "\n" +
-                "Items: " + order.getItems() + "\n" +
-                "Total: $" + order.getTotalAmount() + "\n" +
-                "Customer: " + order.getCustomerName() + "\n" +
-                "=========================";
+
+        return  "================================\n" +
+                "          🍽 FOODIEHUB           \n" +
+                "================================\n" +
+                "         🧾 CUSTOMER BILL       \n" +
+                "--------------------------------\n" +
+                " Order ID   : " + order.getOrderId() + "\n" +
+                " Customer   : " + order.getCustomerName() + "\n" +
+                "--------------------------------\n" +
+                " Items\n" +
+                "--------------------------------\n" +
+                " " + order.getItems() + "\n" +
+                "--------------------------------\n" +
+                " TOTAL      : $" + order.getTotalAmount() + "\n" +
+                "================================\n" +
+                "   THANK YOU FOR ORDERING ❤     \n" +
+                "        Visit Again!            \n" +
+                "================================";
     }
 
     public String generateDriverBill(OrderDto order) {
-        return "===== DRIVER BILL =====\n" +
-                "Order ID: " + order.getOrderId() + "\n" +
-               // "Delivery Address: " + order.getDeliveryAddress() + "\n" +
-                "=======================";
+
+        return  "================================\n" +
+                "          🍽 FOODIEHUB           \n" +
+                "================================\n" +
+                "          🚚 DRIVER BILL        \n" +
+                "--------------------------------\n" +
+                " Order ID   : " + order.getOrderId() + "\n" +
+                "--------------------------------\n" +
+                " Please deliver safely\n" +
+                "================================";
     }
 }
