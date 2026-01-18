@@ -3,14 +3,19 @@ package com.example.OrderService.service;
 
 import com.example.OrderService.clients.UserClient;
 import com.example.OrderService.dto.OrderDto;
+import com.example.OrderService.dto.CombinedOrderRequest;
 import com.example.OrderService.models.OrderModel;
 import com.example.OrderService.repo.OrderRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,6 +28,9 @@ public class OrderService {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private ObjectMapper objectMapper;
     public OrderModel createOrder(OrderModel order) {
 
         // NEW FUNCTIONALITY: validate user
@@ -99,5 +107,85 @@ public class OrderService {
                     return dto;
                 })
                 .orElse(null);
+    }
+
+    // New method: create a combined order from multiple order IDs and mark originals as COMBINED
+    public OrderDto createCombinedOrder(CombinedOrderRequest request) {
+        if (request == null || request.getOrderIds() == null || request.getOrderIds().isEmpty()) {
+            throw new IllegalArgumentException("orderIds required");
+        }
+
+        List<Long> ids = request.getOrderIds();
+
+        List<OrderModel> originals = orderRepository.findAllById(ids);
+        if (originals.isEmpty()) {
+            throw new RuntimeException("No orders found for provided ids");
+        }
+
+        // Detect if items look like JSON arrays and collect/merge accordingly
+        boolean itemsAreJsonArray = true;
+        List<Object> mergedItemsList = new ArrayList<>();
+        StringBuilder mergedItemsFallback = new StringBuilder();
+        double total = 0d;
+
+        for (OrderModel o : originals) {
+            String items = o.getItems();
+            if (items == null || items.isEmpty()) {
+                // skip
+            } else {
+                String trimmed = items.trim();
+                if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                    // try parse
+                    try {
+                        List<Object> part = objectMapper.readValue(trimmed, new TypeReference<List<Object>>() {});
+                        mergedItemsList.addAll(part);
+                    } catch (Exception ex) {
+                        // parsing failed -> fallback
+                        itemsAreJsonArray = false;
+                        if (mergedItemsFallback.length() > 0) mergedItemsFallback.append(";");
+                        mergedItemsFallback.append(items);
+                    }
+                } else {
+                    itemsAreJsonArray = false;
+                    if (mergedItemsFallback.length() > 0) mergedItemsFallback.append(";");
+                    mergedItemsFallback.append(items);
+                }
+            }
+
+            if (o.getTotalAmount() != null) {
+                total += o.getTotalAmount();
+            }
+        }
+
+        OrderModel combined = new OrderModel();
+        combined.setCustomerName(originals.get(0).getCustomerName());
+        combined.setCustomerEmail(originals.get(0).getCustomerEmail());
+
+        if (itemsAreJsonArray) {
+            try {
+                String combinedJson = objectMapper.writeValueAsString(mergedItemsList);
+                combined.setItems(combinedJson);
+            } catch (Exception e) {
+                combined.setItems(mergedItemsFallback.toString());
+            }
+        } else {
+            combined.setItems(mergedItemsFallback.toString());
+        }
+
+        combined.setTotalAmount(total);
+        combined.setOrderDate(LocalDateTime.now());
+        combined.setStatus("COMPLETED");
+        // ensure userId is set so PaidOrderService validation passes
+        combined.setUserId(originals.get(0).getUserId());
+
+        OrderModel saved = orderRepository.save(combined);
+
+        // mark originals as COMBINED
+        for (OrderModel o : originals) {
+            o.setStatus("COMBINED");
+        }
+        orderRepository.saveAll(originals);
+
+        return modelMapper.map(saved, OrderDto.class);
     }
 }

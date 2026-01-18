@@ -1,6 +1,5 @@
 package com.example.OrderService.dto;
 
-import com.example.UserService.models.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,5 +14,5 @@ public class UserDTO {
     private String password;
     private String phoneNumber;
     private String address;
-    private Role role;
+    private String role; // changed from Role to String to avoid dependency on UserService models
 }
