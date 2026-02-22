@@ -1,21 +1,17 @@
 package com.example.OrderService.service;
 
 import com.example.OrderService.clients.UserClient;
-import com.example.OrderService.dto.OrderDto;
 import com.example.OrderService.dto.PayDTO;
 import com.example.OrderService.dto.UserDTO;
 import com.example.OrderService.models.OrderModel;
 import com.example.OrderService.models.PayOrderModel;
 import com.example.OrderService.repo.OrderRepository;
 import com.example.OrderService.repo.PaidOrderRepository;
-import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.reflect.Type;
 import java.util.List;
 
 @Service
@@ -31,8 +27,7 @@ public class PaidOrderService {
     @Autowired
     private UserClient userClient;
 
-    @Autowired
-    private ModelMapper modelMapper;
+    // -------------------- GET ALL --------------------
     public List<PayDTO> getAllOrders() {
 
         List<PayOrderModel> orders = paidOrderRepository.findAll();
@@ -48,7 +43,6 @@ public class PaidOrderService {
             dto.setItems(o.getItems());
             dto.setOrderDate(o.getOrderDate());
 
-            // Explicit FK mapping (IMPORTANT)
             if (o.getOrder() != null) {
                 dto.setOrderId(o.getOrder().getOrderId());
                 dto.setCustomerName(o.getOrder().getCustomerName());
@@ -60,18 +54,11 @@ public class PaidOrderService {
         }).toList();
     }
 
-
-    // -------------------- ADD ORDER --------------------
+    // -------------------- SAVE ORDER --------------------
     public PayDTO saveOrder(PayDTO payDTO) {
-        // 0️⃣ Validate input
-        if (payDTO == null) {
-            throw new IllegalArgumentException("PayDTO must not be null");
-        }
-        if (payDTO.getOrderId() == null) {
-            throw new IllegalArgumentException("OrderId must not be null");
-        }
-        if (payDTO.getUserId() == null) {
-            throw new IllegalArgumentException("UserId must not be null");
+
+        if (payDTO == null || payDTO.getOrderId() == null || payDTO.getUserId() == null) {
+            throw new IllegalArgumentException("Required fields are missing");
         }
 
         // 1️⃣ Validate user via Feign
@@ -88,14 +75,14 @@ public class PaidOrderService {
 
         // 2️⃣ Validate order exists
         OrderModel order = orderRepository.findById(payDTO.getOrderId())
-                .orElseThrow(() -> new RuntimeException(
-                        "Order not found for orderId: " + payDTO.getOrderId()));
+                .orElseThrow(() ->
+                        new RuntimeException("Order not found for orderId: "
+                                + payDTO.getOrderId()));
 
-        // 3️⃣ Map DTO -> Model
+        // 3️⃣ Create model (DO NOT set paymentId manually)
         PayOrderModel model = new PayOrderModel();
         model.setOrder(order);
         model.setUserId(payDTO.getUserId());
-        model.setPaymentId(payDTO.getPaymentId());
         model.setStatus(payDTO.getStatus());
         model.setCustomerName(payDTO.getCustomerName());
         model.setCustomerEmail(payDTO.getCustomerEmail());
@@ -103,10 +90,10 @@ public class PaidOrderService {
         model.setItems(payDTO.getItems());
         model.setOrderDate(payDTO.getOrderDate());
 
-        // 4️⃣ Save payment
+        // 4️⃣ Save
         PayOrderModel saved = paidOrderRepository.save(model);
 
-        // 5️⃣ Map Model -> DTO
+        // 5️⃣ Convert back to DTO
         PayDTO responseDTO = new PayDTO();
         responseDTO.setPaymentId(saved.getPaymentId());
         responseDTO.setOrderId(saved.getOrder().getOrderId());
@@ -120,8 +107,6 @@ public class PaidOrderService {
 
         return responseDTO;
     }
-    // -------------------- UPDATE --------------------
-
 
     // -------------------- DELETE --------------------
     public String deleteOrder(Long paymentId) {
@@ -131,8 +116,28 @@ public class PaidOrderService {
 
     // -------------------- GET BY USER --------------------
     public List<PayDTO> getOrdersByUserId(String userId) {
+
         List<PayOrderModel> orders = paidOrderRepository.findByUserId(userId);
-        Type listType = new TypeToken<List<PayDTO>>() {}.getType();
-        return modelMapper.map(orders, listType);
+
+        return orders.stream().map(o -> {
+
+            PayDTO dto = new PayDTO();
+
+            dto.setPaymentId(o.getPaymentId());
+            dto.setUserId(o.getUserId());
+            dto.setStatus(o.getStatus());
+            dto.setTotalAmount(o.getTotalAmount());
+            dto.setItems(o.getItems());
+            dto.setOrderDate(o.getOrderDate());
+
+            if (o.getOrder() != null) {
+                dto.setOrderId(o.getOrder().getOrderId());
+                dto.setCustomerName(o.getOrder().getCustomerName());
+                dto.setCustomerEmail(o.getOrder().getCustomerEmail());
+            }
+
+            return dto;
+
+        }).toList();
     }
 }
