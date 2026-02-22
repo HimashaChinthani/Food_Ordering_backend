@@ -13,7 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @CrossOrigin
@@ -54,53 +56,44 @@ public class OrderController {
     public OrderDto updateStatus(@PathVariable Long orderid) {
         return orderService.updateStatus(orderid, "COMPLETED");
     }
-
     @PostMapping("/pay-multiple")
     public ResponseEntity<?> payMultipleAndCombine(@RequestBody JsonNode payload) {
         try {
-            List<Long> ids = new ArrayList<>();
+            // Step 1: Extract order IDs
+            Set<Long> ids = new LinkedHashSet<>(); // remove duplicates
 
             if (payload.isArray()) {
                 for (JsonNode el : payload) {
-                    if (el.isNumber()) {
-                        ids.add(el.asLong());
-                    } else if (el.has("orderId")) {
-                        ids.add(el.get("orderId").asLong());
-                    } else if (el.has("id")) {
-                        ids.add(el.get("id").asLong());
-                    } else {
-                        // try to read as number text
-                        try {
-                            ids.add(Long.parseLong(el.asText()));
-                        } catch (Exception ex) {
-                            return ResponseEntity.badRequest().body("Unable to parse array element to orderId: " + el.toString());
+                    if (el.isNumber()) ids.add(el.asLong());
+                    else if (el.has("orderId")) ids.add(el.get("orderId").asLong());
+                    else if (el.has("id")) ids.add(el.get("id").asLong());
+                    else {
+                        try { ids.add(Long.parseLong(el.asText())); }
+                        catch (Exception ex) {
+                            return ResponseEntity.badRequest()
+                                    .body("Unable to parse array element to orderId: " + el.toString());
                         }
                     }
                 }
             } else if (payload.has("orderIds") && payload.get("orderIds").isArray()) {
-                for (JsonNode el : payload.get("orderIds")) {
-                    ids.add(el.asLong());
-                }
-            } else if (payload.has("orderId")) {
-                ids.add(payload.get("orderId").asLong());
-            } else if (payload.has("id")) {
-                ids.add(payload.get("id").asLong());
-            } else if (payload.isNumber()) {
-                ids.add(payload.asLong());
-            } else {
-                return ResponseEntity.badRequest().body("Invalid payload for pay-multiple: must be orderIds array, array of order objects, or single orderId/order object");
-            }
+                for (JsonNode el : payload.get("orderIds")) ids.add(el.asLong());
+            } else if (payload.has("orderId")) ids.add(payload.get("orderId").asLong());
+            else if (payload.has("id")) ids.add(payload.get("id").asLong());
+            else if (payload.isNumber()) ids.add(payload.asLong());
+            else return ResponseEntity.badRequest()
+                        .body("Invalid payload: must be orderIds array or single orderId/order object");
 
+            if (ids.isEmpty()) return ResponseEntity.badRequest().body("No valid order IDs provided");
+
+            // Step 2: Create CombinedOrderRequest
             CombinedOrderRequest req = new CombinedOrderRequest();
-            req.setOrderIds(ids);
-            if (payload.has("paymentMethod")) {
-                req.setPaymentMethod(payload.get("paymentMethod").asText(null));
-            }
+            req.setOrderIds(new ArrayList<>(ids));
+            if (payload.has("paymentMethod")) req.setPaymentMethod(payload.get("paymentMethod").asText(null));
 
-            // create combined order
+            // Step 3: Create combined order
             OrderDto combined = orderService.createCombinedOrder(req);
 
-            // build PayDTO to persist payment record
+            // Step 4: Save payment for combined order
             PayDTO payDTO = new PayDTO();
             payDTO.setOrderId(combined.getOrderId());
             payDTO.setUserId(combined.getUserId());
@@ -110,10 +103,12 @@ public class OrderController {
             payDTO.setTotalAmount(combined.getTotalAmount());
             payDTO.setStatus("COMPLETED");
             payDTO.setOrderDate(combined.getOrderDate());
+//            payDTO.setPaymentMethod(req.getPaymentMethod()); // optional
 
             PayDTO savedPayment = paidOrderService.saveOrder(payDTO);
 
             return ResponseEntity.ok(savedPayment);
+
         } catch (Exception e) {
             return ResponseEntity.status(400).body("pay-multiple failed: " + e.getMessage());
         }

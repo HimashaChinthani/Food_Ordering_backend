@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -116,39 +117,32 @@ public class OrderService {
         }
 
         List<Long> ids = request.getOrderIds();
-
         List<OrderModel> originals = orderRepository.findAllById(ids);
+
         if (originals.isEmpty()) {
             throw new RuntimeException("No orders found for provided ids");
         }
 
-        // Detect if items look like JSON arrays and collect/merge accordingly
-        boolean itemsAreJsonArray = true;
+        // Collect all items into a single list
         List<Object> mergedItemsList = new ArrayList<>();
-        StringBuilder mergedItemsFallback = new StringBuilder();
         double total = 0d;
 
         for (OrderModel o : originals) {
             String items = o.getItems();
-            if (items == null || items.isEmpty()) {
-                // skip
-            } else {
+            if (items != null && !items.isEmpty()) {
                 String trimmed = items.trim();
+
+                // Try parse as JSON array
                 if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-                    // try parse
                     try {
                         List<Object> part = objectMapper.readValue(trimmed, new TypeReference<List<Object>>() {});
                         mergedItemsList.addAll(part);
-                    } catch (Exception ex) {
-                        // parsing failed -> fallback
-                        itemsAreJsonArray = false;
-                        if (mergedItemsFallback.length() > 0) mergedItemsFallback.append(";");
-                        mergedItemsFallback.append(items);
+                    } catch (Exception e) {
+                        // Failed to parse, add as single string
+                        mergedItemsList.add(items);
                     }
                 } else {
-                    itemsAreJsonArray = false;
-                    if (mergedItemsFallback.length() > 0) mergedItemsFallback.append(";");
-                    mergedItemsFallback.append(items);
+                    mergedItemsList.add(items);
                 }
             }
 
@@ -157,33 +151,28 @@ public class OrderService {
             }
         }
 
+        // Create combined order
         OrderModel combined = new OrderModel();
         combined.setCustomerName(originals.get(0).getCustomerName());
         combined.setCustomerEmail(originals.get(0).getCustomerEmail());
-
-        if (itemsAreJsonArray) {
-            try {
-                String combinedJson = objectMapper.writeValueAsString(mergedItemsList);
-                combined.setItems(combinedJson);
-            } catch (Exception e) {
-                combined.setItems(mergedItemsFallback.toString());
-            }
-        } else {
-            combined.setItems(mergedItemsFallback.toString());
-        }
-
+        combined.setUserId(originals.get(0).getUserId());
         combined.setTotalAmount(total);
         combined.setOrderDate(LocalDateTime.now());
         combined.setStatus("COMPLETED");
-        // ensure userId is set so PaidOrderService validation passes
-        combined.setUserId(originals.get(0).getUserId());
 
+        try {
+            combined.setItems(objectMapper.writeValueAsString(mergedItemsList));
+        } catch (Exception e) {
+            combined.setItems(mergedItemsList.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(";")));
+        }
+
+        // Save combined order
         OrderModel saved = orderRepository.save(combined);
 
-        // mark originals as COMBINED
-        for (OrderModel o : originals) {
-            o.setStatus("COMBINED");
-        }
+        // Mark originals as COMBINED
+        originals.forEach(o -> o.setStatus("COMBINED"));
         orderRepository.saveAll(originals);
 
         return modelMapper.map(saved, OrderDto.class);
