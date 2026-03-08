@@ -30,3 +30,4 @@ public class OrderModel {
     @Column(name = "user_id", nullable = true)
     private String userId;
 }
+

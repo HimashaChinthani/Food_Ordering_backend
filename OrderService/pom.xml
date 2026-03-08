@@ -80,7 +80,6 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-
         <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -99,8 +98,18 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.paypal.sdk</groupId>
+            <artifactId>checkout-sdk</artifactId>
+            <version>1.0.5</version>
+        </dependency>
     </dependencies>
-
+    <repositories>
+        <repository>
+            <id>paypal-sdk-repo</id>
+            <url>https://repo.paypal.com/nexus/content/repositories/releases/</url>
+        </repository>
+    </repositories>
     <build>
         <plugins>
             <!-- Spring Boot Maven Plugin -->

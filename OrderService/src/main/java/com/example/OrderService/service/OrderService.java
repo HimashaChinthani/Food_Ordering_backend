@@ -158,7 +158,7 @@ public class OrderService {
         combined.setUserId(originals.get(0).getUserId());
         combined.setTotalAmount(total);
         combined.setOrderDate(LocalDateTime.now());
-        combined.setStatus("COMPLETED");
+        combined.setStatus("PENDING"); // Will be marked COMPLETED after PayPal capture
 
         try {
             combined.setItems(objectMapper.writeValueAsString(mergedItemsList));

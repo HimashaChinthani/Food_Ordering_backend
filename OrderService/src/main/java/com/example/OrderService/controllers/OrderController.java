@@ -3,11 +3,8 @@ package com.example.OrderService.controllers;
 
 import com.example.OrderService.dto.OrderDto;
 import com.example.OrderService.dto.CombinedOrderRequest;
-import com.example.OrderService.dto.PayDTO;
 import com.example.OrderService.service.OrderService;
-import com.example.OrderService.service.PaidOrderService;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +20,6 @@ import java.util.Set;
 public class OrderController {
     @Autowired
     private OrderService orderService;
-
-    @Autowired
-    private PaidOrderService paidOrderService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @GetMapping("/getorders")
     public List<OrderDto> getOrders(){
@@ -77,37 +68,35 @@ public class OrderController {
                 }
             } else if (payload.has("orderIds") && payload.get("orderIds").isArray()) {
                 for (JsonNode el : payload.get("orderIds")) ids.add(el.asLong());
-            } else if (payload.has("orderId")) ids.add(payload.get("orderId").asLong());
-            else if (payload.has("id")) ids.add(payload.get("id").asLong());
-            else if (payload.isNumber()) ids.add(payload.asLong());
-            else return ResponseEntity.badRequest()
-                        .body("Invalid payload: must be orderIds array or single orderId/order object");
+            } else if (payload.has("orderId") && !payload.has("payAll")) {
+                ids.add(payload.get("orderId").asLong());
+            } else if (payload.has("id") && !payload.has("payAll")) {
+                ids.add(payload.get("id").asLong());
+            } else if (payload.isNumber()) {
+                ids.add(payload.asLong());
+            }
 
-            if (ids.isEmpty()) return ResponseEntity.badRequest().body("No valid order IDs provided");
+            // Fallback mode for Pay All button: send userId (and optionally payAll=true)
+            if (ids.isEmpty() && payload.has("userId")) {
+                String userId = payload.get("userId").asText();
+                List<OrderDto> userOrders = orderService.getOrdersByUserId(userId);
+                userOrders.stream()
+                        .filter(o -> o.getOrderId() != null)
+                        .filter(o -> "PENDING".equalsIgnoreCase(o.getStatus()))
+                        .map(OrderDto::getOrderId)
+                        .forEach(ids::add);
+            }
+
+            if (ids.isEmpty()) return ResponseEntity.badRequest().body("No valid PENDING order IDs provided");
 
             // Step 2: Create CombinedOrderRequest
             CombinedOrderRequest req = new CombinedOrderRequest();
             req.setOrderIds(new ArrayList<>(ids));
             if (payload.has("paymentMethod")) req.setPaymentMethod(payload.get("paymentMethod").asText(null));
 
-            // Step 3: Create combined order
+            // Step 3: Create combined order (payment happens later via PayPal capture)
             OrderDto combined = orderService.createCombinedOrder(req);
-
-            // Step 4: Save payment for combined order
-            PayDTO payDTO = new PayDTO();
-            payDTO.setOrderId(combined.getOrderId());
-            payDTO.setUserId(combined.getUserId());
-            payDTO.setCustomerName(combined.getCustomerName());
-            payDTO.setCustomerEmail(combined.getCustomerEmail());
-            payDTO.setItems(combined.getItems());
-            payDTO.setTotalAmount(combined.getTotalAmount());
-            payDTO.setStatus("COMPLETED");
-            payDTO.setOrderDate(combined.getOrderDate());
-//            payDTO.setPaymentMethod(req.getPaymentMethod()); // optional
-
-            PayDTO savedPayment = paidOrderService.saveOrder(payDTO);
-
-            return ResponseEntity.ok(savedPayment);
+            return ResponseEntity.ok(combined);
 
         } catch (Exception e) {
             return ResponseEntity.status(400).body("pay-multiple failed: " + e.getMessage());
